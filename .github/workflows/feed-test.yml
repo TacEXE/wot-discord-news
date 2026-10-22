@@ -4,13 +4,28 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          t() { echo "== $1"; curl -sSL -m 20 -A "$2" -H "Accept: */*" "$1" -o out -w "HTTP %{http_code} %{content_type} %{size_download}B\n"; head -c 150 out; echo; }
-          B="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
-          t https://worldoftanks.eu/de/rss/news/ "$B"
-          t https://worldoftanks.eu/de/rss/news/ "curl/8.5"
-          t https://worldoftanks.eu/de/rss/news/ "Feedly/1.0 (+http://www.feedly.com/fetcher.html)"
-          t https://worldoftanks.eu/en/rss/news/ "$B"
-          t https://worldoftanks.com/en/rss/news/ "$B"
-          t "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fworldoftanks.eu%2Fde%2Frss%2Fnews%2F" "$B"
-          t "https://r.jina.ai/https://worldoftanks.eu/de/rss/news/" "$B"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q playwright && python -m playwright install --with-deps chromium > /dev/null
+      - shell: python
+        run: |
+          from playwright.sync_api import sync_playwright
+          URL = "https://worldoftanks.eu/de/rss/news/"
+          with sync_playwright() as p:
+              for headless in (True,):
+                  b = p.chromium.launch(headless=headless, args=["--disable-blink-features=AutomationControlled"])
+                  ctx = b.new_context(locale="de-DE", user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36")
+                  page = ctx.new_page()
+                  resp = page.goto(URL, wait_until="load", timeout=60000)
+                  for i in range(12):
+                      page.wait_for_timeout(2500)
+                      print(i, page.title()[:60], "|", page.url)
+                      if "please wait" not in page.title().lower():
+                          break
+                  print("cookies:", [c["name"] for c in ctx.cookies()])
+                  r = ctx.request.get(URL)
+                  body = r.body()
+                  print("request.get:", r.status, r.headers.get("content-type"), len(body))
+                  print(body[:400])
+                  b.close()
