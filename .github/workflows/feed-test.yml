@@ -1,0 +1,16 @@
+name: Feed-Test (temporär)
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          t() { echo "== $1"; curl -sSL -m 20 -A "$2" -H "Accept: */*" "$1" -o out -w "HTTP %{http_code} %{content_type} %{size_download}B\n"; head -c 150 out; echo; }
+          B="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+          t https://worldoftanks.eu/de/rss/news/ "$B"
+          t https://worldoftanks.eu/de/rss/news/ "curl/8.5"
+          t https://worldoftanks.eu/de/rss/news/ "Feedly/1.0 (+http://www.feedly.com/fetcher.html)"
+          t https://worldoftanks.eu/en/rss/news/ "$B"
+          t https://worldoftanks.com/en/rss/news/ "$B"
+          t "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fworldoftanks.eu%2Fde%2Frss%2Fnews%2F" "$B"
+          t "https://r.jina.ai/https://worldoftanks.eu/de/rss/news/" "$B"
