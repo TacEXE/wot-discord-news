@@ -1,0 +1,39 @@
+name: WoT News nach Discord
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # alle 15 Minuten (GitHub startet oft ein paar Minuten später)
+  workflow_dispatch:  # erlaubt den Start per Knopfdruck unter "Actions"
+
+permissions:
+  contents: write  # nötig, um posted.json zu speichern
+
+concurrency:
+  group: rss-to-discord
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Neue News posten
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python rss_to_discord.py
+
+      - name: Gepostete Einträge merken
+        run: |
+          if [ -n "$(git status --porcelain posted.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add posted.json
+            git commit -m "posted.json aktualisiert"
+            git push
+          fi
