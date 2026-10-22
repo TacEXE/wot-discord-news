@@ -1,7 +1,7 @@
 # WoT News nach Discord
 
 Postet neue Einträge aus dem World-of-Tanks-News-Feed (https://worldoftanks.eu/de/rss/news/)
-automatisch in einen Discord-Channel. Läuft alle 15 Minuten über GitHub Actions.
+automatisch in einen Discord-Channel. Läuft alle 4 Stunden über GitHub Actions.
 
 - `rss_to_discord.py` holt den Feed und postet neue Einträge per Webhook.
 - `posted.json` merkt sich, was schon gepostet wurde (wird automatisch aktualisiert).

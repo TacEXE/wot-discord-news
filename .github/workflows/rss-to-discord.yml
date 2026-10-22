@@ -2,7 +2,7 @@ name: WoT News nach Discord
 
 on:
   schedule:
-    - cron: "*/15 * * * *"  # alle 15 Minuten (GitHub startet oft ein paar Minuten später)
+    - cron: "17 */4 * * *"  # alle 4 Stunden (GitHub startet oft ein paar Minuten später)
   workflow_dispatch:  # erlaubt den Start per Knopfdruck unter "Actions"
 
 permissions:
