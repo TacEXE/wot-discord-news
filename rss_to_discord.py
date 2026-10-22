@@ -40,9 +40,22 @@ NS = {
 
 
 def fetch_feed():
-    req = urllib.request.Request(FEED_URL, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = resp.read()
+    """Holt den Feed. Die WoT-Seite hat einen Bot-Schutz, der JavaScript verlangt,
+    deshalb öffnen wir sie einmal in einem echten (unsichtbaren) Browser und laden
+    den Feed danach mit dessen Cookies."""
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
+        ctx = browser.new_context(locale="de-DE", user_agent=HEADERS["User-Agent"])
+        page = ctx.new_page()
+        page.goto(FEED_URL, wait_until="load", timeout=60000)
+        for _ in range(12):
+            if "please wait" not in page.title().lower():
+                break
+            page.wait_for_timeout(2500)
+        data = ctx.request.get(FEED_URL, headers={"Accept": HEADERS["Accept"]}).body()
+        browser.close()
     if b"<rss" not in data[:2000] and b"<feed" not in data[:2000]:
         sys.exit(
             "Der Feed hat kein RSS geliefert (vermutlich Bot-Schutz der Webseite).\n"
